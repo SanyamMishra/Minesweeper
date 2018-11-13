@@ -1,0 +1,24 @@
+.minesweeper-grid {
+  width: 400px;
+  height: 400px;
+  background-color: gray;
+
+  display: grid;
+  grid-template-columns: repeat(10,1fr);
+  grid-template-rows: repeat(10,1fr);
+}
+
+.cell {
+  border: 1px solid rgba(0,0,0,0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.cell.revealed {
+  background-color: lightgray;
+}
+
+.cell.bombed {
+  background-color: green;
+}
