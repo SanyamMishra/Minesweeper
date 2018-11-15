@@ -3,16 +3,15 @@
 let options = {
   gridRows: 10,
   gridColumns: 10,
-  mineCount: 25
+  mineCount: 20,
+  maxNeighbourMines: 3
 };
 
 let gameState = {
   started: false,
   markedCorrect: 0,
   markedWrong: 0
-}
-
-gameState.started = false;
+};
 
 for (let i = 0; i < options.gridRows; i++) {
   for (let j = 0; j < options.gridColumns; j++) {
@@ -30,30 +29,58 @@ function getCellElement(x, y) {
 
 function initGrid(seedCell) {
   let seedCellNeighbours = getCellNeighbours(+seedCell.dataset.x, +seedCell.dataset.y);
-  let mineCells = [];
+  let totalMinesPlaced = 0;
 
-  while(mineCells.length < options.mineCount) {
+  while (totalMinesPlaced < options.mineCount) {
+    // create new mine cell
     let newMineCell = getCellElement(Math.floor(Math.random() * options.gridRows), Math.floor(Math.random() * options.gridColumns));
+    
+    // create another mine cell if current mine cell is already mined
+    if (newMineCell.classList.contains('bombed')) continue;
 
+    // create another mine cell if current mine cell is the seed cell
     if (newMineCell === seedCell) continue;
 
+    // create another mine cell if current mine cell is a 
+    // direct neighbour of seed cell
     let neighbourFlag = false;
-    for(let neighbour of seedCellNeighbours) {
+    for (let neighbour of seedCellNeighbours) {
       if (neighbour !== newMineCell) continue;
 
       neighbourFlag = true;
       break;
     }
-    if(neighbourFlag) continue;
+    if (neighbourFlag) continue;
 
-    if (mineCells.find(mineCell => mineCell === newMineCell)) continue;
+    // create another mine cell if current mine cell has
+    // reached the maxNeighbourMines threshold
+    let newMineCellNeighbours = getCellNeighbours(+newMineCell.dataset.x, +newMineCell.dataset.y);
+    let neighbourMinesThresholdFlag = false;
+    for (let neighbour of newMineCellNeighbours) {
+      if (getMinesCount(neighbour) < options.maxNeighbourMines) continue;
 
-    mineCells.push(newMineCell);
+      neighbourMinesThresholdFlag = true;
+      break;
+    }
+    if (neighbourMinesThresholdFlag) continue;
+
+    // save current mine cell
+    newMineCell.classList.add('bombed');
+    totalMinesPlaced++;
   }
 
-  mineCells.forEach(mineCell => mineCell.classList.add('bombed'));
-
   gameState.started = true;
+}
+
+function getMinesCount(seedCell) {
+  let cellNeighbours = getCellNeighbours(+seedCell.dataset.x, +seedCell.dataset.y);
+  let minesCount = 0;
+
+  cellNeighbours.forEach(cellNeighbour => {
+    if (cellNeighbour.classList.contains('bombed')) minesCount++;
+  });
+
+  return minesCount;
 }
 
 function analyseCell(x, y) {
@@ -69,15 +96,10 @@ function analyseCell(x, y) {
 
   seedCellElement.classList.add('revealed');
 
-  let cellNeighbours = getCellNeighbours(x, y);
-  
-  let mineCount = 0;
-  cellNeighbours.forEach(cellNeighbour => {
-    if (cellNeighbour.classList.contains('bombed')) mineCount++;
-  });
+  let minesCount = getMinesCount(seedCellElement);
 
-  if (!mineCount) analyseCellNeighbours(x, y);
-  else seedCellElement.innerHTML = mineCount;
+  if (!minesCount) analyseCellNeighbours(x, y);
+  else seedCellElement.innerHTML = minesCount;
 }
 
 function analyseCellNeighbours(x, y) {
@@ -119,7 +141,7 @@ function markCell(seedCell) {
 }
 
 function resetGrid() {
-  for(let cell of document.querySelectorAll('.minesweeper-grid .cell')) {
+  for (let cell of document.querySelectorAll('.minesweeper-grid .cell')) {
     cell.innerHTML = '';
     cell.className = 'cell';
     gameState = {
@@ -139,9 +161,9 @@ function checkForSuccess() {
 
 document.querySelector('.minesweeper-grid').addEventListener('click', e => {
   let cell = e.target.closest('.cell');
-  if(!cell) return;
+  if (!cell) return;
 
-  if(!gameState.started) initGrid(cell);
+  if (!gameState.started) initGrid(cell);
   
   let [cellX, cellY] = [+cell.dataset.x, +cell.dataset.y];
   

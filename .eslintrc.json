@@ -20,6 +20,15 @@
         "semi": [
             "error",
             "always"
+        ],
+        "space-before-blocks": [
+            "error",
+            "always"
+        ],
+        "keyword-spacing": "error",
+        "eqeqeq": [
+            "error",
+            "always"
         ]
     }
 }
