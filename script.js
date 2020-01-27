@@ -3,15 +3,21 @@
 let options = {
   gridRows: 10,
   gridColumns: 10,
-  mineCount: 20,
+  mineCount: 15,
   maxNeighbourMines: 3
 };
 
 let gameState = {
   started: false,
   markedCorrect: 0,
-  markedWrong: 0
 };
+
+let icons = {
+  flag: '<i class="fas fa-flag"></i>',
+  bomb: '<i class="fas fa-bomb"></i>'
+};
+
+let mineCells = [];
 
 for (let i = 0; i < options.gridRows; i++) {
   for (let j = 0; j < options.gridColumns; j++) {
@@ -36,7 +42,7 @@ function initGrid(seedCell) {
     let newMineCell = getCellElement(Math.floor(Math.random() * options.gridRows), Math.floor(Math.random() * options.gridColumns));
     
     // create another mine cell if current mine cell is already mined
-    if (newMineCell.classList.contains('bombed')) continue;
+    if (newMineCell.classList.contains('bomb')) continue;
 
     // create another mine cell if current mine cell is the seed cell
     if (newMineCell === seedCell) continue;
@@ -65,7 +71,8 @@ function initGrid(seedCell) {
     if (neighbourMinesThresholdFlag) continue;
 
     // save current mine cell
-    newMineCell.classList.add('bombed');
+    newMineCell.classList.add('bomb');
+    mineCells.push(newMineCell);
     totalMinesPlaced++;
   }
 
@@ -77,7 +84,7 @@ function getMinesCount(seedCell) {
   let minesCount = 0;
 
   cellNeighbours.forEach(cellNeighbour => {
-    if (cellNeighbour.classList.contains('bombed')) minesCount++;
+    if (cellNeighbour.classList.contains('bomb')) minesCount++;
   });
 
   return minesCount;
@@ -86,11 +93,12 @@ function getMinesCount(seedCell) {
 function analyseCell(x, y) {
   let seedCellElement = getCellElement(x, y);
 
-  if (seedCellElement.classList.contains('revealed')) return;
+  if (seedCellElement.classList.contains('revealed') || seedCellElement.classList.contains('flagged')) return;
 
-  if (seedCellElement.classList.contains('bombed')) {
-    alert('BOOM! Game Over!');
-    resetGrid();
+  if (seedCellElement.classList.contains('bomb')) {
+    revealAllBombs(seedCellElement, () => {
+      // setTimeout(resetGrid, 5000);
+    });
     return;
   }
 
@@ -130,33 +138,50 @@ function getCellNeighbours(x, y) {
 }
 
 function markCell(seedCell) {
-  if (seedCell.classList.contains('bombed')) {
-    seedCell.innerHTML = 'R';
-    gameState.markedCorrect++;
-  }
-  else {
-    seedCell.innerHTML = 'W';
-    gameState.markedWrong++;
-  }
+  if (seedCell.classList.contains('flagged')) {
+    seedCell.innerHTML = '';
+    seedCell.classList.remove('flagged');
+    if (seedCell.classList.contains('bomb')) {
+      gameState.markedCorrect--;
+    }
+  } else {
+    seedCell.innerHTML = icons.flag;
+    seedCell.classList.add('flagged');
+    if (seedCell.classList.contains('bomb')) {
+      gameState.markedCorrect++;
+    }
+  } 
 }
 
 function resetGrid() {
   for (let cell of document.querySelectorAll('.minesweeper-grid .cell')) {
     cell.innerHTML = '';
     cell.className = 'cell';
-    gameState = {
-      started : false,
-      markedCorrect: 0,
-      markedWrong: 0
-    };
   }
+  gameState = {
+    started : false,
+    markedCorrect: 0,
+  };
+  mineCells = [];
 }
 
 function checkForSuccess() {
   if (gameState.markedCorrect === options.mineCount) {
     alert('Congratulations! You Won!');
-    resetGrid();
+    // resetGrid();
   }
+}
+
+function revealAllBombs(seedCellElement, callback) {
+  seedCellElement.innerHTML = icons.bomb;
+  seedCellElement.classList.add('bombed');
+  for (let i = 0; i < options.mineCount; i++) {
+    setTimeout(() => {
+      mineCells[i].innerHTML = icons.bomb;
+      mineCells[i].classList.add('bombed');
+    }, i*50);
+  }
+  callback();
 }
 
 document.querySelector('.minesweeper-grid').addEventListener('click', e => {
