@@ -54,7 +54,7 @@ body {
   color: var(--flag-color);
 }
 
-.cell.bombed {
+.cell.mined {
   background-color: var(--bomb-background-color);
   color: var(--bomb-foreground-color);
 }
