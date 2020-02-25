@@ -30,5 +30,8 @@
             "error",
             "always"
         ]
+    },
+    "parserOptions": {
+        "sourceType": "module"
     }
 }
